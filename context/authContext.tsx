@@ -1,10 +1,10 @@
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
-  // signInWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { createContext, useEffect, useState } from "react";
 import { auth, db } from "../firebaseConfig";
 
@@ -60,6 +60,7 @@ export const AuthContextProvider = ({
       if (usr) {
         setUser(usr as User);
         setIsAuthenticated(true);
+        updateUserData(usr.uid);
       } else {
         setUser(null);
         setIsAuthenticated(false);
@@ -70,10 +71,17 @@ export const AuthContextProvider = ({
 
   const login = async (email: string, password: string) => {
     try {
-      // await signOut(auth);
+      const response = await signInWithEmailAndPassword(auth, email, password);
       return { success: true }
     } catch (e: Error | any) {
-      return { success: false, msg: e?.message };
+      let msg = e?.message || "Error registering user";
+      if (msg.includes("auth/invalid-email")) {
+        msg = "Invalid email address";
+      }
+       if (msg.includes("auth/wrong-password")) {
+        msg = "Wrong credentials";
+      }
+      return { success: false, msg };
     }
   };
 
@@ -125,9 +133,28 @@ export const AuthContextProvider = ({
       if (msg.includes("auth/invalid-email")) {
         msg = "Invalid email address";
       }
+       if (msg.includes("auth/email-already-in-use")) {
+        msg = "Email address is already in use";
+      }
       return { success: false, msg };
     }
   };
+
+  const updateUserData = async (userId: string) => {
+    const docRef = doc(db, "users", userId);
+    const docSnap = await getDoc(docRef);
+    if(docSnap.exists()) {
+      const data = docSnap.data();
+      setUser({
+        ...user,
+        username: data.username,
+        profileUrl: data.profileUrl,
+        id: userId,
+        email: auth.currentUser?.email || undefined,
+      })
+
+    }
+  }
 
   return (
     <AuthContext.Provider
