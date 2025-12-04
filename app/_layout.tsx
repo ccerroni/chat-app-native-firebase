@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
 import { useAuth } from "./hooks/auth/useAuth";
+import { MenuProvider} from 'react-native-popup-menu';
 
 const MainLayout = () => {
   const { isAuthenticated } = useAuth();
@@ -34,9 +35,11 @@ const MainLayout = () => {
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <AuthContextProvider>
-        <MainLayout />
-      </AuthContextProvider>
+      <MenuProvider>
+        <AuthContextProvider>
+          <MainLayout />
+        </AuthContextProvider>
+      </MenuProvider>
     </SafeAreaProvider>
   );
 }
